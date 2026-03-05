@@ -101,7 +101,7 @@ header {
 #exportBtn {
   background: var(--brand);
   color: white;
-  box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.35);
 }
 
 .top-actions button {
@@ -122,9 +122,8 @@ header {
 #exportBtn:hover,
 .flash-controls button:hover,
 .modal-actions button:hover,
-.inline-menu button:hover,
 #quizOptions button:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 #exportBtn:disabled {
@@ -152,14 +151,22 @@ header {
 }
 
 .inline-menu button {
-  background: #e0e7ff;
-  color: #312e81;
+  background: #eef2ff;
+  color: #1e3a8a;
   min-width: 140px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.inline-menu button:hover:not(.active) {
+  background: #e0e7ff;
+  transform: translateY(-2px);
 }
 
 .inline-menu button.active {
   background: var(--brand);
   color: white;
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.35);
+  transform: translateY(-2px);
 }
 
 .status-pill {
