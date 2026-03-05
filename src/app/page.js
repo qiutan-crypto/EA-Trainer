@@ -671,14 +671,14 @@ export default function Home() {
           <div className="quiz-controls">
             <button onClick={() => {
               if (index > 0) { setIndex(index - 1); setFlipped(false); setQuizSelection(null); }
-            }} style={{ padding: '16px 24px', fontSize: '16px', background: '#10b981', color: 'white', borderRadius: '999px', flex: 1 }}>Prev</button>
+            }} style={{ padding: '16px 24px', fontSize: '16px', background: '#2563eb', color: 'white', borderRadius: '999px', flex: 1, border: 'none', boxShadow: '0 8px 24px rgba(37, 99, 235, 0.25)', fontWeight: '600' }}>Prev</button>
 
             <button onClick={() => {
               if (questions.length === 0) return;
               if (index < questions.length - 1) { setIndex(index + 1); } else { setIndex(0); }
               setFlipped(false);
               setQuizSelection(null);
-            }} style={{ padding: '16px 24px', fontSize: '16px', background: '#10b981', color: 'white', borderRadius: '999px', flex: 1 }}>Next</button>
+            }} style={{ padding: '16px 24px', fontSize: '16px', background: '#2563eb', color: 'white', borderRadius: '999px', flex: 1, border: 'none', boxShadow: '0 8px 24px rgba(37, 99, 235, 0.25)', fontWeight: '600' }}>Next</button>
           </div>
         </div>
       </section>
