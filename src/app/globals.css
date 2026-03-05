@@ -96,7 +96,7 @@ header {
   transition: transform .1s ease, box-shadow .2s ease, background .2s ease;
 }
 
-.file-buttons button,
+.file-buttons>button,
 .top-actions button,
 #exportBtn {
   background: var(--brand);
@@ -118,9 +118,10 @@ header {
   animation: floatPulse 1.8s ease-in-out infinite;
 }
 
-.file-buttons button:hover,
+.file-buttons>button:hover,
 #exportBtn:hover,
 .flash-controls button:hover,
+.quiz-controls button:hover,
 .modal-actions button:hover,
 #quizOptions button:hover {
   transform: translateY(-2px);
@@ -302,6 +303,7 @@ header {
 .quiz-controls button {
   background: #e2e8f0;
   color: #0f172a;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .flash-controls button.accent {
