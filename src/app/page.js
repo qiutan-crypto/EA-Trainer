@@ -23,6 +23,7 @@ export default function Home() {
   const [noteText, setNoteText] = useState("");
   const [questionJsonText, setQuestionJsonText] = useState("");
   const [explanationLoading, setExplanationLoading] = useState(false);
+  const [quizSelection, setQuizSelection] = useState(null);
 
   const fileInputRef = useRef(null);
   const projectInputRef = useRef(null);
@@ -636,33 +637,48 @@ export default function Home() {
           </div>
 
           <div id="quizOptions">
-            {questions.length > 0 && q?.choices.map(choice => (
-              <button key={choice.letter} onClick={(e) => {
-                const parent = e.target.parentElement;
-                parent.querySelectorAll('button').forEach(b => b.classList.remove('correct', 'incorrect'));
-                const isCorrect = choice.letter === q.correct;
-                e.target.classList.add(isCorrect ? 'correct' : 'incorrect');
+            {questions.length > 0 && q?.choices.map(choice => {
+              let btnClass = "";
+              if (quizSelection !== null) {
+                if (choice.letter === q.correct) btnClass = "correct";
+                else if (quizSelection === choice.letter && choice.letter !== q.correct) btnClass = "incorrect";
+              }
 
-                document.getElementById('quizExplain').innerHTML = `<strong>${isCorrect ? 'Great job!' : 'Review this one:'}</strong> ${q.explanation.replace(/\n/g, '<br>')}`;
-              }}>
-                {choice.letter}. {choice.text}
-              </button>
-            ))}
+              return (
+                <button
+                  key={choice.letter}
+                  className={btnClass}
+                  onClick={() => {
+                    if (quizSelection !== null) return; // Prevent changing answer after selection
+                    setQuizSelection(choice.letter);
+                  }}
+                >
+                  {choice.letter}. {choice.text}
+                </button>
+              );
+            })}
           </div>
 
-          <div id="quizExplain"></div>
+          <div id="quizExplain">
+            {quizSelection && (
+              <p>
+                <strong>{quizSelection === q.correct ? 'Great job!' : 'Review this one:'}</strong><br />
+                <span dangerouslySetInnerHTML={{ __html: q.explanation.replace(/\n/g, '<br>') }} />
+              </p>
+            )}
+          </div>
 
           <div className="quiz-controls">
             <button onClick={() => {
-              if (index > 0) { setIndex(index - 1); setFlipped(false); }
-              document.getElementById('quizExplain').innerHTML = '';
-            }}>Prev</button>
+              if (index > 0) { setIndex(index - 1); setFlipped(false); setQuizSelection(null); }
+            }} style={{ padding: '16px 24px', fontSize: '16px', background: '#10b981', color: 'white', borderRadius: '999px', flex: 1 }}>Prev</button>
+
             <button onClick={() => {
               if (questions.length === 0) return;
               if (index < questions.length - 1) { setIndex(index + 1); } else { setIndex(0); }
               setFlipped(false);
-              document.getElementById('quizExplain').innerHTML = '';
-            }}>Next</button>
+              setQuizSelection(null);
+            }} style={{ padding: '16px 24px', fontSize: '16px', background: '#10b981', color: 'white', borderRadius: '999px', flex: 1 }}>Next</button>
           </div>
         </div>
       </section>
