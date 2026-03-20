@@ -24,9 +24,19 @@ export default function Home() {
   const [questionJsonText, setQuestionJsonText] = useState("");
   const [explanationLoading, setExplanationLoading] = useState(false);
   const [quizSelection, setQuizSelection] = useState(null);
+  const [jumpInput, setJumpInput] = useState("");
 
   const fileInputRef = useRef(null);
   const projectInputRef = useRef(null);
+
+  const jumpToQuestion = () => {
+    const target = parseInt(jumpInput, 10);
+    if (!questions.length || isNaN(target) || target < 1 || target > questions.length) return;
+    setIndex(target - 1);
+    setFlipped(false);
+    setQuizSelection(null);
+    setJumpInput("");
+  };
 
   // Load from local storage on mount based on dataset key
   useEffect(() => {
@@ -606,6 +616,18 @@ export default function Home() {
                 setNoteText(notes[q.id] || '');
                 setShowNoteModal(true);
               }}>Notebook</button>
+
+              <div className="jump-control">
+                <input
+                  type="number"
+                  placeholder="Go to #"
+                  value={jumpInput}
+                  disabled={!questions.length}
+                  onChange={e => setJumpInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); jumpToQuestion(); } }}
+                />
+                <button onClick={jumpToQuestion} disabled={!questions.length} style={{ background: '#334155', color: 'white' }}>Go</button>
+              </div>
             </div>
           </div>
 
@@ -679,6 +701,18 @@ export default function Home() {
               setFlipped(false);
               setQuizSelection(null);
             }} style={{ padding: '16px 24px', fontSize: '16px', background: '#2563eb', color: 'white', borderRadius: '999px', flex: 1, border: 'none', boxShadow: '0 8px 24px rgba(37, 99, 235, 0.25)', fontWeight: '600' }}>Next</button>
+
+            <div className="jump-control">
+              <input
+                type="number"
+                placeholder="Go to #"
+                value={jumpInput}
+                disabled={!questions.length}
+                onChange={e => setJumpInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); jumpToQuestion(); } }}
+              />
+              <button onClick={jumpToQuestion} disabled={!questions.length} style={{ padding: '16px 24px', fontSize: '16px', background: '#334155', color: 'white', borderRadius: '999px', border: 'none', fontWeight: '600' }}>Go</button>
+            </div>
           </div>
         </div>
       </section>

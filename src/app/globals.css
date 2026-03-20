@@ -328,8 +328,21 @@ header {
   background: #fff;
 }
 
-.jump-control input:disabled {
+.jump-control input:disabled,
+.jump-control button:disabled {
   opacity: .4;
+}
+
+.jump-control button {
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: none;
+  font-size: 15px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  background: #334155;
+  color: white;
 }
 
 .translate-status {
