@@ -598,35 +598,40 @@ export default function Home() {
             </div>
 
             <div className="flash-controls">
-              <button onClick={() => {
-                if (index > 0) { setIndex(index - 1); setFlipped(false); }
-              }}>Prev</button>
-              <button onClick={() => {
-                if (questions.length === 0) return;
-                if (index < questions.length - 1) { setIndex(index + 1); } else { setIndex(0); }
-                setFlipped(false);
-              }}>Next</button>
+              <div className="flash-controls-row">
+                <button onClick={() => {
+                  if (index > 0) { setIndex(index - 1); setFlipped(false); }
+                }}>Prev</button>
 
-              <button type="button" onClick={explainWithAI} disabled={explanationLoading} style={{ background: '#8b5cf6', color: 'white' }}>
-                {explanationLoading ? "Explaining..." : "Explain (AI)"}
-              </button>
+                <div className="jump-control">
+                  <input
+                    type="number"
+                    placeholder="Go to #"
+                    value={jumpInput}
+                    disabled={!questions.length}
+                    onChange={e => setJumpInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); jumpToQuestion(); } }}
+                  />
+                  <button onClick={jumpToQuestion} disabled={!questions.length} style={{ background: '#334155', color: 'white' }}>Go</button>
+                </div>
 
-              <button className="accent" onClick={() => {
-                if (!questions.length) return;
-                setNoteText(notes[q.id] || '');
-                setShowNoteModal(true);
-              }}>Notebook</button>
+                <button onClick={() => {
+                  if (questions.length === 0) return;
+                  if (index < questions.length - 1) { setIndex(index + 1); } else { setIndex(0); }
+                  setFlipped(false);
+                }}>Next</button>
+              </div>
 
-              <div className="jump-control">
-                <input
-                  type="number"
-                  placeholder="Go to #"
-                  value={jumpInput}
-                  disabled={!questions.length}
-                  onChange={e => setJumpInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); jumpToQuestion(); } }}
-                />
-                <button onClick={jumpToQuestion} disabled={!questions.length} style={{ background: '#334155', color: 'white' }}>Go</button>
+              <div className="flash-controls-row">
+                <button type="button" onClick={explainWithAI} disabled={explanationLoading} style={{ background: '#8b5cf6', color: 'white', flex: 1 }}>
+                  {explanationLoading ? "Explaining..." : "Explain (AI)"}
+                </button>
+
+                <button className="accent" style={{ flex: 1 }} onClick={() => {
+                  if (!questions.length) return;
+                  setNoteText(notes[q.id] || '');
+                  setShowNoteModal(true);
+                }}>Notebook</button>
               </div>
             </div>
           </div>
@@ -695,13 +700,6 @@ export default function Home() {
               if (index > 0) { setIndex(index - 1); setFlipped(false); setQuizSelection(null); }
             }} style={{ padding: '16px 24px', fontSize: '16px', background: '#2563eb', color: 'white', borderRadius: '999px', flex: 1, border: 'none', boxShadow: '0 8px 24px rgba(37, 99, 235, 0.25)', fontWeight: '600' }}>Prev</button>
 
-            <button onClick={() => {
-              if (questions.length === 0) return;
-              if (index < questions.length - 1) { setIndex(index + 1); } else { setIndex(0); }
-              setFlipped(false);
-              setQuizSelection(null);
-            }} style={{ padding: '16px 24px', fontSize: '16px', background: '#2563eb', color: 'white', borderRadius: '999px', flex: 1, border: 'none', boxShadow: '0 8px 24px rgba(37, 99, 235, 0.25)', fontWeight: '600' }}>Next</button>
-
             <div className="jump-control">
               <input
                 type="number"
@@ -713,6 +711,13 @@ export default function Home() {
               />
               <button onClick={jumpToQuestion} disabled={!questions.length} style={{ padding: '16px 24px', fontSize: '16px', background: '#334155', color: 'white', borderRadius: '999px', border: 'none', fontWeight: '600' }}>Go</button>
             </div>
+
+            <button onClick={() => {
+              if (questions.length === 0) return;
+              if (index < questions.length - 1) { setIndex(index + 1); } else { setIndex(0); }
+              setFlipped(false);
+              setQuizSelection(null);
+            }} style={{ padding: '16px 24px', fontSize: '16px', background: '#2563eb', color: 'white', borderRadius: '999px', flex: 1, border: 'none', boxShadow: '0 8px 24px rgba(37, 99, 235, 0.25)', fontWeight: '600' }}>Next</button>
           </div>
         </div>
       </section>

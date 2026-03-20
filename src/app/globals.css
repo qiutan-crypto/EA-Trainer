@@ -290,13 +290,27 @@ header {
   font-weight: 600;
 }
 
-.flash-controls,
+.flash-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 26px;
+}
+
 .quiz-controls {
   display: flex;
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
+  justify-content: center;
   margin-top: 26px;
+}
+
+.flash-controls-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
 }
 
 .flash-controls button,
@@ -307,7 +321,6 @@ header {
 }
 
 .flash-controls button.accent {
-  margin-left: auto;
   background: var(--brand-dark);
   color: white;
 }
@@ -554,11 +567,15 @@ footer {
 
   .flash-controls,
   .quiz-controls {
-    justify-content: stretch;
+    width: 100%;
+  }
+
+  .flash-controls-row {
     flex-direction: column;
     width: 100%;
   }
 
+  .flash-controls-row button,
   .flash-controls button,
   .quiz-controls button {
     width: 100%;
@@ -567,6 +584,11 @@ footer {
   .flash-controls button.accent {
     margin-left: 0;
     width: 100%;
+  }
+
+  .jump-control {
+    width: 100%;
+    justify-content: center;
   }
 
   #flashcard {
