@@ -599,7 +599,7 @@ export default function Home() {
 
             <div className="flash-controls">
               <div className="flash-controls-row">
-                <button onClick={() => {
+                <button className="btn-nav btn-prev" onClick={() => {
                   if (index > 0) { setIndex(index - 1); setFlipped(false); }
                 }}>Prev</button>
 
@@ -612,10 +612,10 @@ export default function Home() {
                     onChange={e => setJumpInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); jumpToQuestion(); } }}
                   />
-                  <button onClick={jumpToQuestion} disabled={!questions.length} style={{ background: '#334155', color: 'white' }}>Go</button>
+                  <button onClick={jumpToQuestion} disabled={!questions.length}>Go</button>
                 </div>
 
-                <button onClick={() => {
+                <button className="btn-nav btn-next" onClick={() => {
                   if (questions.length === 0) return;
                   if (index < questions.length - 1) { setIndex(index + 1); } else { setIndex(0); }
                   setFlipped(false);
@@ -623,11 +623,11 @@ export default function Home() {
               </div>
 
               <div className="flash-controls-row">
-                <button type="button" onClick={explainWithAI} disabled={explanationLoading} style={{ background: '#8b5cf6', color: 'white', flex: 1 }}>
+                <button className="btn-nav btn-explain" type="button" onClick={explainWithAI} disabled={explanationLoading || !questions.length}>
                   {explanationLoading ? "Explaining..." : "Explain (AI)"}
                 </button>
 
-                <button className="accent" style={{ flex: 1 }} onClick={() => {
+                <button className="btn-nav btn-notebook" onClick={() => {
                   if (!questions.length) return;
                   setNoteText(notes[q.id] || '');
                   setShowNoteModal(true);
@@ -696,9 +696,9 @@ export default function Home() {
           </div>
 
           <div className="quiz-controls">
-            <button onClick={() => {
+            <button className="btn-nav btn-prev" onClick={() => {
               if (index > 0) { setIndex(index - 1); setFlipped(false); setQuizSelection(null); }
-            }} style={{ padding: '16px 24px', fontSize: '16px', background: '#2563eb', color: 'white', borderRadius: '999px', flex: 1, border: 'none', boxShadow: '0 8px 24px rgba(37, 99, 235, 0.25)', fontWeight: '600' }}>Prev</button>
+            }}>Prev</button>
 
             <div className="jump-control">
               <input
@@ -709,15 +709,27 @@ export default function Home() {
                 onChange={e => setJumpInput(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); jumpToQuestion(); } }}
               />
-              <button onClick={jumpToQuestion} disabled={!questions.length} style={{ padding: '16px 24px', fontSize: '16px', background: '#334155', color: 'white', borderRadius: '999px', border: 'none', fontWeight: '600' }}>Go</button>
+              <button onClick={jumpToQuestion} disabled={!questions.length}>Go</button>
             </div>
 
-            <button onClick={() => {
+            <button className="btn-nav btn-next" onClick={() => {
               if (questions.length === 0) return;
               if (index < questions.length - 1) { setIndex(index + 1); } else { setIndex(0); }
               setFlipped(false);
               setQuizSelection(null);
-            }} style={{ padding: '16px 24px', fontSize: '16px', background: '#2563eb', color: 'white', borderRadius: '999px', flex: 1, border: 'none', boxShadow: '0 8px 24px rgba(37, 99, 235, 0.25)', fontWeight: '600' }}>Next</button>
+            }}>Next</button>
+          </div>
+
+          <div className="quiz-controls">
+            <button className="btn-nav btn-explain" type="button" onClick={explainWithAI} disabled={explanationLoading || !questions.length}>
+              {explanationLoading ? "Explaining..." : "Explain (AI)"}
+            </button>
+
+            <button className="btn-nav btn-notebook" onClick={() => {
+              if (!questions.length) return;
+              setNoteText(notes[q.id] || '');
+              setShowNoteModal(true);
+            }}>Notebook</button>
           </div>
         </div>
       </section>
@@ -728,7 +740,7 @@ export default function Home() {
             <span>Notebook View</span>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
               <span>{Object.values(notes).filter(t => t && t.trim()).length} Notes</span>
-              <button onClick={exportNotesToPDF} style={{ padding: '6px 14px', fontSize: '13px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '999px', cursor: 'pointer' }}>
+              <button className="btn-nav btn-prev" onClick={exportNotesToPDF} style={{ padding: '6px 14px', fontSize: '13px', flex: 'none' }}>
                 Download PDF
               </button>
             </div>
