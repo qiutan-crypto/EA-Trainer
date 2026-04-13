@@ -120,18 +120,9 @@ export default function Home() {
         const file = await handle.getFile();
         const text = await file.text();
         mergeProjectPayload(JSON.parse(text));
-
-        // Request write permission immediately while user gesture is active
-        const perm = await handle.requestPermission({ mode: 'readwrite' });
-        if (perm === 'granted') {
-          projectFileHandleRef.current = handle;
-          setProjectFileName(file.name);
-          setDataStatus(prev => prev + ` [File linked: ${file.name}]`);
-        } else {
-          projectFileHandleRef.current = null;
-          setProjectFileName("");
-          console.warn("Write permission denied for file handle");
-        }
+        projectFileHandleRef.current = handle;
+        setProjectFileName(file.name);
+        setDataStatus(prev => prev + ` [File linked: ${file.name}]`);
         setMode('flash');
       } catch (err) {
         if (err.name !== 'AbortError') {
@@ -231,21 +222,14 @@ export default function Home() {
     };
 
     // 1) Try writing back to the original file handle (from Load Project)
+    //    Permission was already granted at load time, just write directly.
     if (projectFileHandleRef.current) {
       try {
-        // Re-verify write permission
-        const perm = await projectFileHandleRef.current.requestPermission({ mode: 'readwrite' });
-        if (perm === 'granted') {
-          const writable = await projectFileHandleRef.current.createWritable();
-          await writable.write(jsonStr);
-          await writable.close();
-          onSuccess(`✓ Saved to ${projectFileName}: ${questions.length} questions, ${noteCount} notes.`);
-          return;
-        } else {
-          console.warn("Write permission denied, falling through to Save As");
-          projectFileHandleRef.current = null;
-          setProjectFileName("");
-        }
+        const writable = await projectFileHandleRef.current.createWritable();
+        await writable.write(jsonStr);
+        await writable.close();
+        onSuccess(`✓ Saved to ${projectFileName}: ${questions.length} questions, ${noteCount} notes.`);
+        return;
       } catch (err) {
         console.error("Failed to write to file handle:", err.name, err.message);
         projectFileHandleRef.current = null;
