@@ -28,6 +28,8 @@ export default function Home() {
   const [quizSelection, setQuizSelection] = useState(null);
   const [jumpInput, setJumpInput] = useState("");
 
+  const [projectFileName, setProjectFileName] = useState("");
+
   const fileInputRef = useRef(null);
   const projectInputRef = useRef(null);
   const projectFileHandleRef = useRef(null);
@@ -118,7 +120,18 @@ export default function Home() {
         const file = await handle.getFile();
         const text = await file.text();
         mergeProjectPayload(JSON.parse(text));
-        projectFileHandleRef.current = handle;
+
+        // Request write permission immediately while user gesture is active
+        const perm = await handle.requestPermission({ mode: 'readwrite' });
+        if (perm === 'granted') {
+          projectFileHandleRef.current = handle;
+          setProjectFileName(file.name);
+          setDataStatus(prev => prev + ` [File linked: ${file.name}]`);
+        } else {
+          projectFileHandleRef.current = null;
+          setProjectFileName("");
+          console.warn("Write permission denied for file handle");
+        }
         setMode('flash');
       } catch (err) {
         if (err.name !== 'AbortError') {
@@ -206,6 +219,10 @@ export default function Home() {
     };
     const jsonStr = JSON.stringify(payload, null, 2);
     const noteCount = Object.keys(notes).filter(k => notes[k]?.trim()).length;
+    const baseName = (currentDatasetLabel || 'dataset')
+      .replace(/[^a-zA-Z0-9-_]+/g, '_')
+      .replace(/_{2,}/g, '_')
+      .replace(/^_+|_+$/g, '') || 'dataset';
 
     const onSuccess = (msg) => {
       setSaveFlash(true);
@@ -216,26 +233,32 @@ export default function Home() {
     // 1) Try writing back to the original file handle (from Load Project)
     if (projectFileHandleRef.current) {
       try {
-        const writable = await projectFileHandleRef.current.createWritable();
-        await writable.write(jsonStr);
-        await writable.close();
-        onSuccess(`Saved to file: ${questions.length} questions, ${noteCount} notes.`);
-        return;
+        // Re-verify write permission
+        const perm = await projectFileHandleRef.current.requestPermission({ mode: 'readwrite' });
+        if (perm === 'granted') {
+          const writable = await projectFileHandleRef.current.createWritable();
+          await writable.write(jsonStr);
+          await writable.close();
+          onSuccess(`✓ Saved to ${projectFileName}: ${questions.length} questions, ${noteCount} notes.`);
+          return;
+        } else {
+          console.warn("Write permission denied, falling through to Save As");
+          projectFileHandleRef.current = null;
+          setProjectFileName("");
+        }
       } catch (err) {
-        console.error("Failed to write to file handle", err);
+        console.error("Failed to write to file handle:", err.name, err.message);
+        projectFileHandleRef.current = null;
+        setProjectFileName("");
         // Fall through to Save As
       }
     }
 
     // 2) No file handle — use Save As picker so user can choose where to save
     if (window.showSaveFilePicker) {
-      const base = (currentDatasetLabel || 'dataset')
-        .replace(/[^a-zA-Z0-9-_]+/g, '_')
-        .replace(/_{2,}/g, '_')
-        .replace(/^_+|_+$/g, '') || 'dataset';
       try {
         const handle = await window.showSaveFilePicker({
-          suggestedName: `${base}_project.json`,
+          suggestedName: `${baseName}_project.json`,
           types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }],
         });
         const writable = await handle.createWritable();
@@ -243,29 +266,27 @@ export default function Home() {
         await writable.close();
         // Remember this handle for future saves
         projectFileHandleRef.current = handle;
-        onSuccess(`Saved to file: ${questions.length} questions, ${noteCount} notes.`);
+        const savedFile = await handle.getFile();
+        setProjectFileName(savedFile.name);
+        onSuccess(`✓ Saved to ${savedFile.name}: ${questions.length} questions, ${noteCount} notes.`);
         return;
       } catch (err) {
         if (err.name === 'AbortError') return; // User cancelled
-        console.error("Failed to save via picker", err);
+        console.error("Failed to save via picker:", err.name, err.message);
       }
     }
 
-    // 3) Final fallback: download
-    const base = (currentDatasetLabel || 'dataset')
-      .replace(/[^a-zA-Z0-9-_]+/g, '_')
-      .replace(/_{2,}/g, '_')
-      .replace(/^_+|_+$/g, '') || 'dataset';
+    // 3) Final fallback: download (Firefox / Safari)
     const blob = new Blob([jsonStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${base}_project.json`;
+    link.download = `${baseName}_project.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    onSuccess(`Downloaded: ${questions.length} questions, ${noteCount} notes.`);
+    onSuccess(`Downloaded ${baseName}_project.json (${questions.length} questions, ${noteCount} notes)`);
   };
 
   const exportProject = () => {
@@ -666,7 +687,7 @@ export default function Home() {
             <button id="csvTrigger" onClick={() => fileInputRef.current?.click()}>Import CSV</button>
             <button id="projectTrigger" onClick={handleProjectOpen}>Load Project</button>
             <button id="addQuestionBtn" type="button" onClick={() => setShowQuestionModal(true)}>Add Question</button>
-            <button id="saveBtn" className={saveFlash ? 'save-flash' : ''} onClick={saveProject} disabled={questions.length === 0}>Save</button>
+            <button id="saveBtn" className={saveFlash ? 'save-flash' : ''} onClick={saveProject} disabled={questions.length === 0} title={projectFileName ? `Save to: ${projectFileName}` : 'Save (will prompt for location)'}>{projectFileName ? `Save ✓` : 'Save'}</button>
             <button id="exportBtn" onClick={exportProject} disabled={questions.length === 0}>Export Project</button>
           </div>
         </div>
