@@ -30,6 +30,7 @@ export default function Home() {
 
   const fileInputRef = useRef(null);
   const projectInputRef = useRef(null);
+  const projectFileHandleRef = useRef(null);
 
   const jumpToQuestion = () => {
     const target = parseInt(jumpInput, 10);
@@ -106,9 +107,35 @@ export default function Home() {
     evt.target.value = ""; // reset
   };
 
+  const handleProjectOpen = async () => {
+    // Use File System Access API to get a writable file handle
+    if (window.showOpenFilePicker) {
+      try {
+        const [handle] = await window.showOpenFilePicker({
+          types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }],
+          multiple: false,
+        });
+        const file = await handle.getFile();
+        const text = await file.text();
+        mergeProjectPayload(JSON.parse(text));
+        projectFileHandleRef.current = handle;
+        setMode('flash');
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          alert('Unable to load project file.');
+          console.error(err);
+        }
+      }
+    } else {
+      // Fallback for browsers without File System Access API
+      projectInputRef.current?.click();
+    }
+  };
+
   const handleProjectUpload = (evt) => {
     const file = evt.target.files[0];
     if (!file) return;
+    projectFileHandleRef.current = null; // no file handle in fallback mode
     const reader = new FileReader();
     reader.onload = () => {
       try {
@@ -167,25 +194,54 @@ export default function Home() {
     }
   };
 
-  const saveProject = () => {
+  const saveProject = async () => {
     if (!questions.length) return;
     const payload = {
-      savedAt: new Date().toISOString(),
+      exportedAt: new Date().toISOString(),
       questionCount: questions.length,
       datasetName: currentDatasetLabel || 'dataset',
       datasetKey: currentDatasetKey,
       questions,
       notes
     };
-    try {
-      localStorage.setItem(STORAGE_PROJECT_KEY, JSON.stringify(payload));
-      setSaveFlash(true);
-      setDataStatus(`Saved: ${questions.length} questions, ${Object.keys(notes).filter(k => notes[k]?.trim()).length} notes.`);
-      setTimeout(() => setSaveFlash(false), 1500);
-    } catch (err) {
-      console.error("Failed to save project", err);
-      alert("Failed to save project. Storage may be full.");
+    const jsonStr = JSON.stringify(payload, null, 2);
+
+    // Try writing back to the original file handle
+    if (projectFileHandleRef.current) {
+      try {
+        const writable = await projectFileHandleRef.current.createWritable();
+        await writable.write(jsonStr);
+        await writable.close();
+        setSaveFlash(true);
+        setDataStatus(`Saved to file: ${questions.length} questions, ${Object.keys(notes).filter(k => notes[k]?.trim()).length} notes.`);
+        setTimeout(() => setSaveFlash(false), 1500);
+        return;
+      } catch (err) {
+        if (err.name === 'NotAllowedError') {
+          // User denied write permission, fall through to download
+        } else {
+          console.error("Failed to save to file", err);
+        }
+      }
     }
+
+    // Fallback: download as file
+    const base = (currentDatasetLabel || 'dataset')
+      .replace(/[^a-zA-Z0-9-_]+/g, '_')
+      .replace(/_{2,}/g, '_')
+      .replace(/^_+|_+$/g, '') || 'dataset';
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${base}_project.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setSaveFlash(true);
+    setDataStatus(`Downloaded: ${questions.length} questions, ${Object.keys(notes).filter(k => notes[k]?.trim()).length} notes.`);
+    setTimeout(() => setSaveFlash(false), 1500);
   };
 
   const exportProject = () => {
@@ -584,7 +640,7 @@ export default function Home() {
           <div className="header-title">EA Trainer · Flashcards · Quiz · Notebook</div>
           <div className="top-actions">
             <button id="csvTrigger" onClick={() => fileInputRef.current?.click()}>Import CSV</button>
-            <button id="projectTrigger" onClick={() => projectInputRef.current?.click()}>Load Project</button>
+            <button id="projectTrigger" onClick={handleProjectOpen}>Load Project</button>
             <button id="addQuestionBtn" type="button" onClick={() => setShowQuestionModal(true)}>Add Question</button>
             <button id="saveBtn" className={saveFlash ? 'save-flash' : ''} onClick={saveProject} disabled={questions.length === 0}>Save</button>
             <button id="exportBtn" onClick={exportProject} disabled={questions.length === 0}>Export Project</button>
