@@ -205,27 +205,53 @@ export default function Home() {
       notes
     };
     const jsonStr = JSON.stringify(payload, null, 2);
+    const noteCount = Object.keys(notes).filter(k => notes[k]?.trim()).length;
 
-    // Try writing back to the original file handle
+    const onSuccess = (msg) => {
+      setSaveFlash(true);
+      setDataStatus(msg);
+      setTimeout(() => setSaveFlash(false), 1500);
+    };
+
+    // 1) Try writing back to the original file handle (from Load Project)
     if (projectFileHandleRef.current) {
       try {
         const writable = await projectFileHandleRef.current.createWritable();
         await writable.write(jsonStr);
         await writable.close();
-        setSaveFlash(true);
-        setDataStatus(`Saved to file: ${questions.length} questions, ${Object.keys(notes).filter(k => notes[k]?.trim()).length} notes.`);
-        setTimeout(() => setSaveFlash(false), 1500);
+        onSuccess(`Saved to file: ${questions.length} questions, ${noteCount} notes.`);
         return;
       } catch (err) {
-        if (err.name === 'NotAllowedError') {
-          // User denied write permission, fall through to download
-        } else {
-          console.error("Failed to save to file", err);
-        }
+        console.error("Failed to write to file handle", err);
+        // Fall through to Save As
       }
     }
 
-    // Fallback: download as file
+    // 2) No file handle — use Save As picker so user can choose where to save
+    if (window.showSaveFilePicker) {
+      const base = (currentDatasetLabel || 'dataset')
+        .replace(/[^a-zA-Z0-9-_]+/g, '_')
+        .replace(/_{2,}/g, '_')
+        .replace(/^_+|_+$/g, '') || 'dataset';
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: `${base}_project.json`,
+          types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(jsonStr);
+        await writable.close();
+        // Remember this handle for future saves
+        projectFileHandleRef.current = handle;
+        onSuccess(`Saved to file: ${questions.length} questions, ${noteCount} notes.`);
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return; // User cancelled
+        console.error("Failed to save via picker", err);
+      }
+    }
+
+    // 3) Final fallback: download
     const base = (currentDatasetLabel || 'dataset')
       .replace(/[^a-zA-Z0-9-_]+/g, '_')
       .replace(/_{2,}/g, '_')
@@ -239,9 +265,7 @@ export default function Home() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    setSaveFlash(true);
-    setDataStatus(`Downloaded: ${questions.length} questions, ${Object.keys(notes).filter(k => notes[k]?.trim()).length} notes.`);
-    setTimeout(() => setSaveFlash(false), 1500);
+    onSuccess(`Downloaded: ${questions.length} questions, ${noteCount} notes.`);
   };
 
   const exportProject = () => {
