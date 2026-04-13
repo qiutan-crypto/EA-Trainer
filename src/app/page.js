@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import jsPDF from "jspdf";
 
 const STORAGE_KEY = "ea_trainer_notes";
+const STORAGE_PROJECT_KEY = "ea_trainer_saved_project";
 
 export default function Home() {
   const [questions, setQuestions] = useState([]);
@@ -15,6 +16,7 @@ export default function Home() {
   const [currentDatasetKey, setCurrentDatasetKey] = useState("");
   const [currentDatasetLabel, setCurrentDatasetLabel] = useState("");
   const [dataStatus, setDataStatus] = useState("No dataset loaded.");
+  const [saveFlash, setSaveFlash] = useState(false);
 
   // Modals
   const [showNoteModal, setShowNoteModal] = useState(false);
@@ -37,6 +39,29 @@ export default function Home() {
     setQuizSelection(null);
     setJumpInput("");
   };
+
+  // Auto-load saved project on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_PROJECT_KEY);
+      if (saved) {
+        const payload = JSON.parse(saved);
+        if (payload && Array.isArray(payload.questions) && payload.questions.length) {
+          setQuestions(payload.questions.sort((a, b) => a.id - b.id));
+          setNotes(payload.notes || {});
+          const label = payload.datasetName || 'dataset';
+          setCurrentDatasetLabel(label);
+          setCurrentDatasetKey(payload.datasetKey || sanitizeDatasetKey(label));
+          setIndex(0);
+          setFlipped(false);
+          setDataStatus(`Restored: ${payload.questions.length} questions, ${Object.keys(payload.notes || {}).length} notes.`);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to restore saved project", err);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load from local storage on mount based on dataset key
   useEffect(() => {
@@ -139,6 +164,27 @@ export default function Home() {
       alert(`Failed to generate AI explanation: ${err.message}`);
     } finally {
       setExplanationLoading(false);
+    }
+  };
+
+  const saveProject = () => {
+    if (!questions.length) return;
+    const payload = {
+      savedAt: new Date().toISOString(),
+      questionCount: questions.length,
+      datasetName: currentDatasetLabel || 'dataset',
+      datasetKey: currentDatasetKey,
+      questions,
+      notes
+    };
+    try {
+      localStorage.setItem(STORAGE_PROJECT_KEY, JSON.stringify(payload));
+      setSaveFlash(true);
+      setDataStatus(`Saved: ${questions.length} questions, ${Object.keys(notes).filter(k => notes[k]?.trim()).length} notes.`);
+      setTimeout(() => setSaveFlash(false), 1500);
+    } catch (err) {
+      console.error("Failed to save project", err);
+      alert("Failed to save project. Storage may be full.");
     }
   };
 
@@ -540,6 +586,7 @@ export default function Home() {
             <button id="csvTrigger" onClick={() => fileInputRef.current?.click()}>Import CSV</button>
             <button id="projectTrigger" onClick={() => projectInputRef.current?.click()}>Load Project</button>
             <button id="addQuestionBtn" type="button" onClick={() => setShowQuestionModal(true)}>Add Question</button>
+            <button id="saveBtn" className={saveFlash ? 'save-flash' : ''} onClick={saveProject} disabled={questions.length === 0}>Save</button>
             <button id="exportBtn" onClick={exportProject} disabled={questions.length === 0}>Export Project</button>
           </div>
         </div>

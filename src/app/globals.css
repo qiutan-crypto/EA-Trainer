@@ -80,10 +80,27 @@ header {
   transform: translateY(-1px);
 }
 
-#exportBtn {
+#saveBtn {
   background: var(--success) !important;
   color: white !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  transition: all .2s ease;
+}
+
+#saveBtn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+#saveBtn.save-flash {
+  background: #34d399 !important;
+  box-shadow: 0 0 16px rgba(52, 211, 153, 0.6);
+}
+
+#exportBtn {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
 }
 
 #exportBtn:disabled {
