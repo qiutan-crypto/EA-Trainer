@@ -389,6 +389,98 @@ export default function Home() {
     html2pdf().from(container).set(opt).save();
   };
 
+  const exportQuizToPDF = async () => {
+    if (!questions.length) {
+      alert("No questions loaded to export.");
+      return;
+    }
+
+    const container = document.createElement("div");
+    container.style.padding = "20px";
+    container.style.fontFamily = "sans-serif";
+    container.style.color = "#000";
+    container.style.lineHeight = "1.6";
+
+    // Title page
+    const titleSection = document.createElement("div");
+    titleSection.innerHTML = `
+      <div style="text-align: center; padding: 40px 0 20px 0;">
+        <h1 style="font-size: 28px; font-weight: bold; margin-bottom: 8px;">EA Exam Practice Quiz</h1>
+        <p style="font-size: 16px; color: #555; margin: 4px 0;">${currentDatasetLabel || 'Dataset'}</p>
+        <p style="font-size: 14px; color: #888; margin: 4px 0;">${questions.length} Questions</p>
+        <p style="font-size: 13px; color: #aaa; margin: 4px 0;">Generated ${new Date().toLocaleDateString()}</p>
+      </div>
+      <hr style="border: none; border-top: 2px solid #333; margin: 20px 0;" />
+    `;
+    container.appendChild(titleSection);
+
+    questions.forEach((q, idx) => {
+      const section = document.createElement("div");
+      section.style.marginBottom = "28px";
+      // Avoid splitting a question block across pages
+      section.style.pageBreakInside = "avoid";
+
+      let html = '';
+
+      // Question header & text
+      html += `
+        <div style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 8px;">
+          <p style="font-size: 15px; font-weight: bold; margin: 0 0 4px 0; color: #222;">Question ${q.id}</p>
+          <p style="font-size: 14px; margin: 0;">${q.question}</p>
+        </div>`;
+
+      // Choices
+      html += `<ul style="list-style-type: none; padding-left: 16px; font-size: 14px; margin: 8px 0 12px 0;">`;
+      q.choices.forEach(c => {
+        html += `<li style="margin-bottom: 5px; page-break-inside: avoid;">${c.letter}. ${c.text}</li>`;
+      });
+      html += `</ul>`;
+
+      // Correct answer
+      html += `
+        <div style="page-break-inside: avoid; break-inside: avoid; margin-bottom: 6px;">
+          <p style="font-size: 14px; font-weight: bold; margin: 0; color: #1a7f37;">✔ Correct Answer: ${q.correct}</p>
+        </div>`;
+
+      // Explanation (from CSV or AI notes)
+      const explanationText = q.explanation || '';
+      const noteText = notes[q.id] || '';
+      const combinedExplanation = [explanationText, noteText].filter(t => t.trim()).join('\n\n');
+
+      if (combinedExplanation.trim()) {
+        html += `
+        <div style="page-break-inside: avoid; break-inside: avoid; background: #f7f7f7; border-left: 3px solid #666; padding: 8px 12px; margin-top: 4px;">
+          <p style="font-size: 13px; font-weight: bold; margin: 0 0 4px 0; color: #444;">Explanation:</p>`;
+        combinedExplanation.split('\n').forEach(line => {
+          html += `<p style="font-size: 13px; margin: 0 0 3px 0; white-space: pre-wrap;">${line || '&nbsp;'}</p>`;
+        });
+        html += `</div>`;
+      }
+
+      // Separator between questions
+      if (idx < questions.length - 1) {
+        html += `<hr style="border: none; border-top: 1px solid #ddd; margin: 16px 0 0 0;" />`;
+      }
+
+      section.innerHTML = html;
+      container.appendChild(section);
+    });
+
+    const html2pdf = (await import('html2pdf.js')).default;
+
+    const base = (currentDatasetLabel || "dataset").replace(/[^a-zA-Z0-9-_]+/g, "_");
+    const opt = {
+      margin: [12, 12, 12, 12],
+      filename: `${base}_quiz.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    html2pdf().from(container).set(opt).save();
+  };
+
   // Utility to convert ArrayBuffer to Base64 for jsPDF
   const arrayBufferToBase64 = (buffer) => {
     let binary = '';
@@ -673,6 +765,7 @@ export default function Home() {
             <button id="addQuestionBtn" type="button" onClick={() => setShowQuestionModal(true)}>Add Question</button>
             <button id="saveBtn" className={saveFlash ? 'save-flash' : ''} onClick={saveProject} disabled={questions.length === 0} title={projectFileName ? `Save to: ${projectFileName}` : 'Save (will prompt for location)'}>{projectFileName ? `Save ✓` : 'Save'}</button>
             <button id="exportBtn" onClick={exportProject} disabled={questions.length === 0}>Export Project</button>
+            <button id="quizPdfBtn" onClick={exportQuizToPDF} disabled={questions.length === 0}>Download Quiz PDF</button>
           </div>
         </div>
       </header>
